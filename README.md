@@ -8,3 +8,5 @@ Node 10+
 
 ### Run
 `npm start`
+
+Open `http://localhost:3006`
