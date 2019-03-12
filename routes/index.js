@@ -35,7 +35,7 @@ function compare(a1, a2) {
 
 router.get('/', async (req, res) => {
     const { type = 'bonds', sort, order = 'desc' } = req.query;
-    let index = parseInt(sort);
+    let index = parseInt(sort) || 5;
     if (allowedTypes.indexOf(type) === -1) {
         res.statusCode = 400;
         return res.send('unsupported type');
