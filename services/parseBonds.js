@@ -54,6 +54,8 @@ const indices = {
 module.exports = function parse(str, type) {
     const bonds = [];
     const positions = indices[type] || indices.subfed;
+    // for `ofz` ISIN won't work, need to parse bond page
+    const addLinkToBcs = type === 'bonds' || type === 'subfed';
 
     try {
         const $ = cheerio.load(str);
@@ -89,6 +91,10 @@ module.exports = function parse(str, type) {
             bond.push((tds[positions.accumulated].children[0] || {data: ''}).data);
             bond.push((tds[positions.duration].children[0] || {data: ''}).data);
             bond.push((tds[positions.couponDate].children[0] || {data: ''}).data);
+            if (addLinkToBcs) {
+                const bcsLink = href.replace('/q/bonds', 'https://bcs-express.ru/kotirovki-i-grafiki');
+                bond.push({ name: 'БКС', href: bcsLink });
+            }
 
             return bonds.push(bond);
         });

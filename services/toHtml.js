@@ -17,20 +17,27 @@ const columnNames = [
 ];
 
 const createColumnHeaders =
-    (type, selected, order) => columnNames
-        .map((name, index) => '<th><a href="/?'
-            + `type=${type}&`
-            + `sort=${index}&`
-            + `order=${index !== selected
-                ? order
-                : order === 'desc'
-                    ? 'asc'
-                    : 'desc'
-            }`
-            + `">${name}</a></th>`)
-        .join('');
+    (type, selected, order) => {
+        const insertBcs = type === 'bonds' || type === 'subfed';
+        const names = columnNames
+            .map((name, index) => '<th><a href="/?'
+                + `type=${type}&`
+                + `sort=${index}&`
+                + `order=${index !== selected
+                    ? order
+                    : order === 'desc'
+                        ? 'asc'
+                        : 'desc'
+                }`
+                + `">${name}</a></th>`);
+        if (insertBcs) {
+            names.push(`<th>БКС</th>`);
+        }
+        return names.join('');
+    };
 
 module.exports = function toHtml(bonds, type, selected, order) {
+    const insertBcs = type === 'bonds' || type === 'subfed';
     const bondsStrs = bonds.map(bond => {
         return '<tr>' +
             bond.map(item => {
