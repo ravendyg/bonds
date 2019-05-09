@@ -9,7 +9,6 @@ if (!fs.existsSync(dataDir)) {
     fs.mkdirSync(dataDir);
 }
 
-// TODO: implement for corporate
 app.get('/styles.css', require('./routes/styles'));
 app.use('/', require('./routes/index'));
 
