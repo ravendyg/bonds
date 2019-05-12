@@ -18,7 +18,6 @@ const columnNames = [
 
 const createColumnHeaders =
     (type, selected, order) => {
-        const insertBcs = type === 'bonds' || type === 'subfed';
         const names = columnNames
             .map((name, index) => '<th><a href="/?'
                 + `type=${type}&`
@@ -30,14 +29,11 @@ const createColumnHeaders =
                         : 'desc'
                 }`
                 + `">${name}</a></th>`);
-        if (insertBcs) {
-            names.push(`<th>БКС</th>`);
-        }
+        names.push(`<th>БКС</th>`);
         return names.join('');
     };
 
 module.exports = function toHtml(bonds, type, selected, order) {
-    const insertBcs = type === 'bonds' || type === 'subfed';
     const bondsStrs = bonds.map(bond => {
         return '<tr>' +
             bond.map(item => {
