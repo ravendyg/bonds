@@ -4,6 +4,7 @@ const fetch = require('../services/fetch');
 const parse = require('../services/parseBonds');
 const config = require('../config');
 const toHtml = require('../services/toHtml');
+const { consts } = require('../consts');
 
 const dataDir = config.dir + '/data';
 const allowedTypes = ['ofz', 'subfed', 'bonds'];
@@ -34,8 +35,32 @@ function compare(a1, a2) {
 }
 
 router.get('/', async (req, res) => {
-    const { type = 'bonds', sort, order = 'desc' } = req.query;
+    const queryKeys = Object.keys(req.query);
+    if (queryKeys.length === 0 ||
+        queryKeys.length === 1 && queryKeys[0] === 'type'
+    ) {
+        const type = req.query.type || 'bonds';
+        return res.redirect(`/?type=${type}&sort=5&upperLimit=20&lowerLimit=0&order=desc`);
+    }
+
+    const {
+        type = 'bonds',
+        // column to sort by
+        sort,
+        order = 'desc',
+        upperLimit,
+        lowerLimit,
+    } = req.query;
     let index = parseInt(sort) || 5;
+    let _upperLimit = upperLimit;
+    let _lowerLimit = lowerLimit;
+    // default upper limit for returns without reinvestment
+    if (typeof _upperLimit === 'undefined' && index === 5) {
+        _upperLimit = consts.withoutReinvestmentDefaultUpperLimit;
+    }
+    if (typeof _lowerLimit === 'undefined' && index === 5) {
+        _lowerLimit = consts.withoutReinvestmentDefaultLowerLimit;
+    }
     if (allowedTypes.indexOf(type) === -1) {
         res.statusCode = 400;
         return res.send('unsupported type');
@@ -69,6 +94,13 @@ router.get('/', async (req, res) => {
         data.sort((e1, e2) => {
             return compare(e1[index], e2[index]) * mult;
         });
+        if (typeof _upperLimit !== 'undefined' || typeof _lowerLimit !== 'undefined') {
+            data = data.filter(e => {
+                return (_upperLimit === undefined || e[index] < _upperLimit)
+                && (_lowerLimit === undefined || e[index] > _lowerLimit)
+            }
+            );
+        }
     } catch (err) {
         console.error(err);
         res.sendStatus = 500;

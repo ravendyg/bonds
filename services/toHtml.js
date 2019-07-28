@@ -1,3 +1,4 @@
+const { consts } = require('../consts');
 const columnNames = [
     'Время',
     'Имя',
@@ -19,16 +20,21 @@ const columnNames = [
 const createColumnHeaders =
     (type, selected, order) => {
         const names = columnNames
-            .map((name, index) => '<th><a href="/?'
+            .map((name, index) => {
+                return '<th><a href="/?'
                 + `type=${type}&`
                 + `sort=${index}&`
+                + (index === 5 ?
+                    'upperLimit=' + consts.withoutReinvestmentDefaultUpperLimit
+                    + '&lowerLimit=' + consts.withoutReinvestmentDefaultLowerLimit + '&'
+                    : '')
                 + `order=${index !== selected
                     ? order
                     : order === 'desc'
                         ? 'asc'
                         : 'desc'
                 }`
-                + `">${name}</a></th>`);
+                + `">${name}</a></th>`});
         names.push(`<th>БКС</th>`);
         return names.join('');
     };
