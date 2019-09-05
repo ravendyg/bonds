@@ -1,4 +1,22 @@
 const { consts } = require('../consts');
+const columnNamesOfz = [
+    'Время',
+    'Имя',
+    'Погашение',
+    'Лет до погаш.',
+    'Доходн',
+    'Дох.без.реинв.',
+    'Тип выплат',
+    'Год.куп.дох.',
+    'Куп.дох.посл.',
+    'Цена',
+    'Объём',
+    'Купон',
+    'Частота',
+    'НКД',
+    'Дюрация',
+    'Дата куп.',
+];
 const columnNames = [
     'Время',
     'Имя',
@@ -19,7 +37,7 @@ const columnNames = [
 
 const createColumnHeaders =
     (type, selected, order) => {
-        const names = columnNames
+        const names = (type === 'ofz' ? columnNamesOfz : columnNames)
             .map((name, index) => {
                 return '<th><a href="/?'
                 + `type=${type}&`

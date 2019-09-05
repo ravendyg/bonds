@@ -23,6 +23,7 @@ const indices = {
         paymentDate: 4,
         leftUntilPayed: 5,
         yield: 6,
+        paymentType: 7,
         couponRate: 8,
         couponToPrice: 9,
         price: 10,
@@ -80,6 +81,14 @@ module.exports = function parse(str, type) {
             bond.push(leftUntilPayed);
             bond.push(_yield);
             bond.push(yieldWithoutReinvestment);
+            if (type === 'ofz') {
+                const childNode = tds[positions.paymentType].children[0];
+                if (childNode && childNode.name === 'span') {
+                    bond.push((childNode.children[0] || { data: '' }).data);
+                } else {
+                    bond.push('');
+                }
+            }
             bond.push(couponRate);
             bond.push(couponToPrice);
             bond.push(price);
