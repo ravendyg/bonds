@@ -35,6 +35,13 @@ function compare(a1, a2) {
 }
 
 router.get('/', async (req, res) => {
+    const { hidden } = req.cookies;
+    const hiddenSet = new Set();
+    if (hidden) {
+        hidden.split('|').forEach(item => {
+            hiddenSet.add(item);
+        });
+    }
     const queryKeys = Object.keys(req.query);
     if (queryKeys.length === 0 ||
         queryKeys.length === 1 && queryKeys[0] === 'type'
@@ -90,6 +97,7 @@ router.get('/', async (req, res) => {
 
     try {
         data = parse(str, type);
+        data = data.filter(item => !hiddenSet.has(item[1].name));
         const mult = order === 'asc' ? -1 : 1;
         data.sort((e1, e2) => {
             return compare(e1[index], e2[index]) * mult;

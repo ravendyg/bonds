@@ -54,27 +54,32 @@ const createColumnHeaders =
                 }`
                 + `">${name}</a></th>`});
         names.push(`<th>БКС</th>`);
+        names.push('<th>Скрыть</th>');
         return names.join('');
     };
 
 module.exports = function toHtml(bonds, type, selected, order) {
     const bondsStrs = bonds.map(bond => {
         return '<tr>' +
-            bond.map(item => {
-                if (typeof item === 'object') {
-                    const { name, href } = item;
-                    return `<td><a href="${href}" target="_blank">${name}</a></td>`;
-                } else {
-                    return `<td>${item}</td>`;
-                }
-            }).join('')
+            bond
+                .map(item => {
+                    if (typeof item === 'object') {
+                        const { name, href } = item;
+                        return `<td><a href="${href}" target="_blank">${name}</a></td>`;
+                    } else {
+                        return `<td>${item}</td>`;
+                    }
+                })
+                .concat('<td class="hide">X</td>')
+                .join('')
             + '</tr>';
     }).join('');
 
     return `
     <html>
         <head>
-        <link rel="stylesheet" type="text/css" href="/styles.css">
+            <link rel="stylesheet" type="text/css" href="/styles.css">
+            <link rel="stylesheet" type="text/css" href="/my-styles.css">
             <title>
                 Bonds
             </title>
@@ -105,6 +110,7 @@ module.exports = function toHtml(bonds, type, selected, order) {
                     ${bondsStrs}
                 </tbody>
             </table>
+            <script type="application/javascript" src="/script.js"></script>
         </body>
     </html>`;
 }
