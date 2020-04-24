@@ -1,3 +1,4 @@
+// @ts-check
 const express = require('express');
 const fs = require('fs');
 const fetch = require('../services/fetch');
@@ -6,7 +7,6 @@ const config = require('../config');
 const toHtml = require('../services/toHtml');
 const { consts } = require('../consts');
 
-const dataDir = config.dir + '/data';
 const allowedTypes = ['ofz', 'subfed', 'bonds'];
 
 const router = express.Router();
@@ -34,89 +34,83 @@ function compare(a1, a2) {
             : 0;
 }
 
-router.get('/', async (req, res) => {
-    const { hidden } = req.cookies;
-    const hiddenSet = new Set();
-    if (hidden) {
-        hidden.split('|').forEach(item => {
-            hiddenSet.add(item);
-        });
-    }
-    const queryKeys = Object.keys(req.query);
-    if (queryKeys.length === 0 ||
-        queryKeys.length === 1 && queryKeys[0] === 'type'
-    ) {
-        const type = req.query.type || 'bonds';
-        return res.redirect(`/?type=${type}&sort=5&upperLimit=20&lowerLimit=0&order=desc`);
-    }
+module.exports = function createIndexRouter(filterService) {
+    return async (req, res) => {
+        const queryKeys = Object.keys(req.query);
+        if (queryKeys.length === 0 ||
+            queryKeys.length === 1 && queryKeys[0] === 'type'
+        ) {
+            const type = req.query.type || 'bonds';
+            return res.redirect(`/?type=${type}&sort=5&upperLimit=20&lowerLimit=0&order=desc`);
+        }
 
-    const {
-        type = 'bonds',
-        // column to sort by
-        sort,
-        order = 'desc',
-        upperLimit,
-        lowerLimit,
-    } = req.query;
-    let index = parseInt(sort) || 5;
-    let _upperLimit = upperLimit;
-    let _lowerLimit = lowerLimit;
-    // default upper limit for returns without reinvestment
-    if (typeof _upperLimit === 'undefined' && index === 5) {
-        _upperLimit = consts.withoutReinvestmentDefaultUpperLimit;
-    }
-    if (typeof _lowerLimit === 'undefined' && index === 5) {
-        _lowerLimit = consts.withoutReinvestmentDefaultLowerLimit;
-    }
-    if (allowedTypes.indexOf(type) === -1) {
-        res.statusCode = 400;
-        return res.send('unsupported type');
-    }
+        const {
+            type = 'bonds',
+            // column to sort by
+            sort,
+            order = 'desc',
+            upperLimit,
+            lowerLimit,
+        } = req.query;
+        let index = parseInt(sort) || 5;
+        let _upperLimit = upperLimit;
+        let _lowerLimit = lowerLimit;
+        // default upper limit for returns without reinvestment
+        if (typeof _upperLimit === 'undefined' && index === 5) {
+            _upperLimit = consts.withoutReinvestmentDefaultUpperLimit;
+        }
+        if (typeof _lowerLimit === 'undefined' && index === 5) {
+            _lowerLimit = consts.withoutReinvestmentDefaultLowerLimit;
+        }
+        if (allowedTypes.indexOf(type) === -1) {
+            res.statusCode = 400;
+            return res.send('unsupported type');
+        }
 
-    const bondsFileStr = `${dataDir}/${type}.txt`;
-    let data;
-    let str = '';
-    const url = `https://smart-lab.ru/q/${type}/`;
+        const bondsFileStr = `${config.dataDir}/${type}.txt`;
+        let data;
+        let str = '';
+        const url = `https://smart-lab.ru/q/${type}/`;
 
-    try {
-        const { mtime } = fs.lstatSync(bondsFileStr);
-        if (Date.now() - mtime > 1000 * 60 * 60) {
+        try {
+            const { mtime } = fs.lstatSync(bondsFileStr);
+            if (Date.now() - mtime.getTime() > 1000 * 60 * 60) {
+                str = await fetch(url);
+                fs.writeFileSync(bondsFileStr, str);
+            } else {
+                str = fs.readFileSync(bondsFileStr, { encoding: 'utf8' });
+            }
+        } catch (err2) {
             str = await fetch(url);
             fs.writeFileSync(bondsFileStr, str);
-        } else {
-            str = fs.readFileSync(bondsFileStr);
         }
-    } catch (err2) {
-        str = await fetch(url);
-        fs.writeFileSync(bondsFileStr, str);
-    }
-    if (!str) {
-        res.statusCode = 404;
-        return res.send('not found');
-    }
+        if (!str) {
+            res.statusCode = 404;
+            return res.send('not found');
+        }
 
-    try {
-        data = parse(str, type);
-        data = data.filter(item => !hiddenSet.has(item[1].name));
-        const mult = order === 'asc' ? -1 : 1;
-        data.sort((e1, e2) => {
-            return compare(e1[index], e2[index]) * mult;
-        });
-        if (typeof _upperLimit !== 'undefined' || typeof _lowerLimit !== 'undefined') {
-            data = data.filter(e => {
-                return (_upperLimit === undefined || e[index] < _upperLimit)
-                && (_lowerLimit === undefined || e[index] > _lowerLimit)
+        try {
+            const blackList = filterService.get();
+            data = parse(str, type);
+            data = data.filter(item => !blackList[item[1].name]);
+            const mult = order === 'asc' ? -1 : 1;
+            data.sort((e1, e2) => {
+                return compare(e1[index], e2[index]) * mult;
+            });
+            if (typeof _upperLimit !== 'undefined' || typeof _lowerLimit !== 'undefined') {
+                data = data.filter(e => {
+                    return (_upperLimit === undefined || e[index] < _upperLimit)
+                    && (_lowerLimit === undefined || e[index] > _lowerLimit)
+                }
+                );
             }
-            );
+        } catch (err) {
+            console.error(err);
+            res.status(500);
+            return res.send('server error');
         }
-    } catch (err) {
-        console.error(err);
-        res.sendStatus = 500;
-        return res.send('server error');
-    }
-    let sortDirection = ['asc', 'desc'].indexOf(order) !== -1 ? order : 'desc';
+        let sortDirection = ['asc', 'desc'].indexOf(order) !== -1 ? order : 'desc';
 
-    res.send(toHtml(data, type, index, sortDirection));
-});
-
-module.exports = router;
+        res.send(toHtml(data, type, index, sortDirection));
+    };
+};
