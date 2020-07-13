@@ -61,6 +61,9 @@ module.exports = function parse(str, type) {
         trs.slice(1).each((index, node) => {
             const bond = [];
             const tds = node.children.filter(chd => chd.name === 'td');
+            if (tds.length < 2) {
+              return;
+            }
             const leftUntilPayed = (tds[positions.leftUntilPayed].children[0] || { data: '' }).data;
             const couponRate = parseFloat((tds[positions.couponRate].children[0] || { data: '0' }).data);
             const price = (tds[positions.price].children[0] || { data: '' }).data;
