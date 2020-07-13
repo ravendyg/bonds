@@ -1,4 +1,4 @@
 module.exports = {
-    dir: __dirname,
+    dataDir: __dirname + '/data',
     port: 3006,
 };

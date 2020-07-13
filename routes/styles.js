@@ -2,7 +2,7 @@ const fs = require('fs');
 const fetch = require('../services/fetch');
 const config = require('../config');
 
-const cssFile = config.dir + '/data/styles.css';
+const cssFile = config.dataDir + '/styles.css';
 
 module.exports = async function styles(req, res) {
     let str = '';

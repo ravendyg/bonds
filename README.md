@@ -1,7 +1,7 @@
 Small wrapper around a website providing info on Russian bonds.
 
 ### Requirements
-Node 10+
+Node 12+
 
 ### Installation
 `npm i`
@@ -10,3 +10,6 @@ Node 10+
 `npm start`
 
 Open `http://localhost:3006`
+
+### TODO
+Maybe move from `quick and dirty` to smth better.
